@@ -64,6 +64,7 @@ O PDF terá uma página por aluno, com os demais dados iguais. A pré-visualiza�
 
 - Documento em A4 paisagem, com moldura formal e tipografia serifada no título.
 - Logotipos da UFPA, do ITEC e do CAEFEL já embutidos no arquivo, com opção de substituí-los pela própria interface.
+- Espaço para um logo extra opcional (por exemplo, de um parceiro ou do evento), posicionado ao lado do CAEFEL ou do ITEC. A UFPA permanece centralizada.
 - Exportação em PDF em alta resolução (aproximadamente 300 dpi). O nome do arquivo é gerado a partir do nome do aluno ou, no lote, da quantidade de alunos.
 - Impressão direta, exibindo apenas o documento.
 
