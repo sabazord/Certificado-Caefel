@@ -8,13 +8,13 @@ Aplicação em arquivo único (HTML, CSS e JavaScript). Os dados são preenchido
 
 | Modelo | Título | Campos específicos |
 |---|---|---|
-| Participação em evento | CERTIFICADO | Nome da atividade/evento, carga horária, categoria de horas. Aceita geração em lote. |
+| Participação em evento | CERTIFICADO | Nome da atividade/evento, carga horária, categoria de horas |
 | Declaração de visita técnica | DECLARAÇÃO | RG do aluno, professor(a) e RG, disciplina, local, cidade/UF, carga horária (todos opcionais) |
 | Membro do CAEFEL | CERTIFICADO | Cargo na gestão, carga horária, categoria de horas |
 | Monitoria | CERTIFICADO | Disciplina, professor(a) orientador(a), período, carga horária |
 | Minicurso | CERTIFICADO | Título, ministrante, data/período, carga horária, promotor |
 
-O texto do corpo é montado automaticamente conforme o modelo escolhido e os campos preenchidos. Campos opcionais desmarcados são omitidos do texto.
+O texto do corpo é montado automaticamente conforme o modelo escolhido e os campos preenchidos. Campos opcionais desmarcados são omitidos do texto. Todos os modelos aceitam geração em lote.
 
 ## Como usar
 
@@ -25,12 +25,31 @@ O texto do corpo é montado automaticamente conforme o modelo escolhido e os cam
 1. Escolha o modelo de documento.
 2. Preencha o nome do aluno e, se quiser, a matrícula.
 3. Preencha os campos específicos do modelo e a data de emissão.
-4. Preencha os nomes das assinaturas: Diretor(a) da Faculdade, Vice-diretor(a) da Faculdade e Presidente do CAEFEL. Qualquer uma pode ser removida do documento pelo botão ✕ e restaurada depois.
+4. Preencha as três assinaturas (veja abaixo).
 5. Clique em **Baixar PDF** ou **Imprimir**.
+
+### Assinaturas
+
+O documento tem três posições de assinatura (esquerda, centro e direita). Em cada uma é possível:
+
+- preencher o nome de quem assina;
+- editar livremente o cargo que aparece abaixo da linha (uma quebra de linha no campo vira quebra de linha no documento);
+- escolher um cargo pronto na lista (Diretor(a) da Faculdade, Presidente do CAEFEL, Coordenador(a) do Curso, Coordenador(a) do Evento, Professor(a) Orientador(a), Ministrante etc.) e ajustá-lo depois, se precisar;
+- remover a assinatura do documento pelo botão ✕ e restaurá-la depois sem perder o nome.
+
+Os cargos padrão são Diretor(a) da Faculdade, Vice-diretor(a) da Faculdade e Presidente do CAEFEL.
 
 ### Geração em lote
 
-No modelo de participação em evento, marque **Gerar em lote** e informe os nomes separados por ponto e vírgula (`;`). O PDF terá uma página por aluno, com os demais dados iguais.
+Disponível em todos os modelos. Marque **Gerar em lote** e informe os alunos um por linha ou separados por ponto e vírgula (`;`). Para incluir a matrícula de cada um, use o formato `Nome, matrícula`:
+
+```
+Allan Sabá Peralta Castro, 202312345678
+Maria Silva, 202398765432
+João Souza
+```
+
+O PDF terá uma página por aluno, com os demais dados iguais. A pré-visualização mostra o primeiro aluno da lista. Campos que são individuais por natureza, como o RG do aluno na declaração de visita técnica, ficam ocultos no modo lote.
 
 ## Recursos
 
@@ -42,5 +61,5 @@ No modelo de participação em evento, marque **Gerar em lote** e informe os nom
 ## Observações
 
 - A exportação em PDF e as fontes usam bibliotecas carregadas por CDN (html2canvas, jsPDF e Google Fonts), então é necessário estar conectado à internet. Sem conexão, a página funciona com fontes alternativas e o botão Imprimir continua disponível.
-- O botão Imprimir gera apenas o documento exibido na pré-visualização. No lote, use **Baixar PDF** para obter todos os alunos.
+- No modo lote, o botão Imprimir envia uma página por aluno para a impressora.
 - Para ativar o GitHub Pages: **Settings → Pages → Source: Deploy from a branch → Branch: `main` / `(root)` → Save**.
