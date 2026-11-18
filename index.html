@@ -121,6 +121,13 @@ input:focus,select:focus{outline:2px solid var(--azul);outline-offset:1px;border
 textarea.cargo-input{min-height:0;font-size:13px;line-height:1.35;padding:7px 10px}
 .sig-sugestao{font-size:12.5px;padding:6px 9px;color:var(--cinza)}
 .sig-posicao{font-weight:400;color:var(--cinza);font-size:12px}
+.sig-imagem{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.sig-imagem input[type=file]{display:none}
+.sig-thumb{
+  height:38px;max-width:130px;object-fit:contain;padding:2px 4px;
+  border:1px solid var(--borda-ui);border-radius:6px;
+  background:repeating-conic-gradient(#EEF0F4 0 25%,#fff 0 50%) 0 0/10px 10px;
+}
 .dica-matricula-lote{display:none}
 #campoMatricula.em-lote .campo-linha-input{display:none}
 #campoMatricula.em-lote:not(.desmarcado) .dica-matricula-lote{display:block}
@@ -335,7 +342,16 @@ textarea:focus{outline:2px solid var(--azul);outline-offset:1px;border-color:var
 .assinatura .linha{
   border-bottom:1.4px solid var(--tinta);
   height:40px;margin-bottom:7px;
+  position:relative;
 }
+/* com alguma assinatura em imagem, as três linhas ganham altura juntas para manter o alinhamento */
+.cert-assinaturas.com-imagem .linha{height:62px}
+/* a imagem fica sobre a linha, invadindo-a levemente, como uma assinatura feita à caneta */
+.assinatura .sig-img{
+  position:absolute;left:0;right:0;bottom:-9px;margin:0 auto;
+  display:block;max-height:70px;max-width:92%;
+}
+.assinatura .sig-img.oculto{display:none}
 .assinatura .nome{
   font-size:14.5px;font-weight:700;color:var(--tinta);
   line-height:1.2;min-height:18px;
@@ -668,10 +684,73 @@ const CARGOS_SUGERIDOS = [
   "Ministrante"
 ];
 const ASSINATURAS = [
-  {id:"sig1", posicao:"esquerda", cargo:CARGOS_SUGERIDOS[0]},
-  {id:"sig2", posicao:"centro",   cargo:CARGOS_SUGERIDOS[1]},
-  {id:"sig3", posicao:"direita",  cargo:CARGOS_SUGERIDOS[2]}
+  {id:"sig1", posicao:"esquerda", cargo:CARGOS_SUGERIDOS[0], imagem:null},
+  {id:"sig2", posicao:"centro",   cargo:CARGOS_SUGERIDOS[1], imagem:null},
+  {id:"sig3", posicao:"direita",  cargo:CARGOS_SUGERIDOS[2], imagem:null}
 ];
+
+/* Prepara a imagem da assinatura: reduz imagens muito grandes, torna o fundo
+   claro transparente (o papel do documento não é branco puro) e corta as
+   margens vazias, para que assinaturas escaneadas com folga fiquem do mesmo
+   tamanho visual das demais. A imagem só existe na memória do navegador. */
+function processarAssinatura(dataURL){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const MAX = 1400;
+      const k = Math.min(1, MAX / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width*k)), h = Math.max(1, Math.round(img.height*k));
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      const ctx = c.getContext("2d");
+      ctx.drawImage(img, 0, 0, w, h);
+      const dados = ctx.getImageData(0, 0, w, h), p = dados.data;
+      let x0 = w, y0 = h, x1 = -1, y1 = -1;
+      for(let i = 0; i < p.length; i += 4){
+        const lum = 0.299*p[i] + 0.587*p[i+1] + 0.114*p[i+2];
+        if(lum >= 235) p[i+3] = 0;                                   // fundo
+        else if(lum > 200) p[i+3] = Math.round(p[i+3]*(235-lum)/35); // borda suave do traço
+        if(p[i+3] > 20){
+          const px = (i/4) % w, py = Math.floor(i/4/w);
+          if(px < x0) x0 = px; if(px > x1) x1 = px;
+          if(py < y0) y0 = py; if(py > y1) y1 = py;
+        }
+      }
+      if(x1 < 0){ reject(new Error("a imagem parece estar vazia ou toda em branco")); return; }
+      ctx.putImageData(dados, 0, 0);
+      const m = 4;
+      x0 = Math.max(0, x0-m); y0 = Math.max(0, y0-m);
+      x1 = Math.min(w-1, x1+m); y1 = Math.min(h-1, y1+m);
+      const out = document.createElement("canvas");
+      out.width = x1-x0+1; out.height = y1-y0+1;
+      out.getContext("2d").drawImage(c, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
+      resolve(out.toDataURL("image/png"));
+    };
+    img.onerror = ()=> reject(new Error("não foi possível ler o arquivo como imagem"));
+    img.src = dataURL;
+  });
+}
+function carregarImagemAssinatura(s, arquivo){
+  const leitor = new FileReader();
+  leitor.onload = async ev=>{
+    try{
+      s.imagem = await processarAssinatura(ev.target.result);
+      atualizarControlesImagem(s);
+      render();
+    }catch(err){
+      $("status").textContent = "Assinatura não carregada: " + err.message + ".";
+      setTimeout(()=> $("status").textContent = "", 6000);
+    }
+  };
+  leitor.readAsDataURL(arquivo);
+}
+function atualizarControlesImagem(s){
+  const tem = !!s.imagem;
+  const thumb = $("thumb_"+s.id);
+  if(tem) thumb.src = s.imagem; else thumb.removeAttribute("src");
+  thumb.classList.toggle("oculto", !tem);
+  $("rmimg_"+s.id).classList.toggle("oculto", !tem);
+  $("rotuloImg_"+s.id).firstChild.textContent = tem ? "Trocar imagem" : "Enviar imagem da assinatura (PNG)";
+}
 
 function renderAssinaturas(){
   $("assinaturasForm").innerHTML = ASSINATURAS.map((s,i)=>`
@@ -687,6 +766,11 @@ function renderAssinaturas(){
           <option value="">Usar um cargo pronto…</option>
           ${CARGOS_SUGERIDOS.map((c,k)=>`<option value="${k}">${esc(c.replace(/\n/g," "))}</option>`).join("")}
         </select>
+        <div class="sig-imagem">
+          <img id="thumb_${s.id}" class="sig-thumb oculto" alt="Imagem da assinatura ${i+1}">
+          <label class="btn-troca" id="rotuloImg_${s.id}">Enviar imagem da assinatura (PNG)<input type="file" id="img_${s.id}" accept="image/png,image/jpeg,image/webp"></label>
+          <button type="button" class="btn-restaurar oculto" id="rmimg_${s.id}">Remover imagem</button>
+        </div>
       </div>
       <div class="removido-info">
         <span>Assinatura removida do documento</span>
@@ -696,7 +780,7 @@ function renderAssinaturas(){
 
   $("blocoAssinaturas").innerHTML = ASSINATURAS.map(s=>`
     <div class="assinatura" id="bloco_${s.id}">
-      <div class="linha"></div>
+      <div class="linha"><img class="sig-img oculto" id="certImg_${s.id}" alt=""></div>
       <div class="nome" id="certNome_${s.id}">&nbsp;</div>
       <div class="cargo" id="certCargo_${s.id}"></div>
     </div>`).join("");
@@ -708,6 +792,16 @@ function renderAssinaturas(){
       const k = e.target.value;
       if(k !== "") $("cargo_"+s.id).value = CARGOS_SUGERIDOS[Number(k)];
       e.target.value = "";
+      render();
+    });
+    $("img_"+s.id).addEventListener("change", e=>{
+      const f = e.target.files[0];
+      e.target.value = ""; // permite reenviar o mesmo arquivo
+      if(f) carregarImagemAssinatura(s, f);
+    });
+    $("rmimg_"+s.id).addEventListener("click", ()=>{
+      s.imagem = null;
+      atualizarControlesImagem(s);
       render();
     });
   });
@@ -887,7 +981,13 @@ function renderDoc(aluno){
   ASSINATURAS.forEach(s=>{
     $("certNome_"+s.id).textContent  = $("nome_"+s.id).value.trim() || " ";
     $("certCargo_"+s.id).textContent = $("cargo_"+s.id).value.trim();
+    const im = $("certImg_"+s.id);
+    if(s.imagem){ if(im.getAttribute("src") !== s.imagem) im.src = s.imagem; }
+    else im.removeAttribute("src");
+    im.classList.toggle("oculto", !s.imagem);
   });
+  $("blocoAssinaturas").classList.toggle("com-imagem",
+    ASSINATURAS.some(s => s.imagem && !$("bloco_"+s.id).classList.contains("oculto")));
 
   if(loteAtivo()){
     const n = parseAlunosLote().length;
@@ -954,7 +1054,16 @@ async function gerarPDF(){
       await new Promise(r => requestAnimationFrame(()=>requestAnimationFrame(r))); // reflow do novo aluno
       const canvas = await html2canvas(alvo, {
         scale: 3, useCORS: true, backgroundColor: "#FDFBF3",
-        windowWidth: 1123, windowHeight: 794
+        windowWidth: 1123, windowHeight: 794,
+        // A pré-visualização é reduzida com transform: scale() em telas menores.
+        // O html2canvas desenha o texto no tamanho real em posições já reduzidas,
+        // o que sobrepõe as palavras; por isso a captura usa uma cópia sem escala.
+        onclone: doc => {
+          const sc = doc.getElementById("certScaler");
+          sc.style.transform = "none";
+          sc.style.width = "1123px";
+          sc.style.height = "794px";
+        }
       });
       if(i > 0) pdf.addPage("a4","landscape");
       pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, 297, 210);

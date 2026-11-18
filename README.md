@@ -33,11 +33,20 @@ O texto do corpo é montado automaticamente conforme o modelo escolhido e os cam
 O documento tem três posições de assinatura (esquerda, centro e direita). Em cada uma é possível:
 
 - preencher o nome de quem assina;
+- enviar a imagem da assinatura (PNG, JPG ou WebP), que aparece sobre a linha;
 - editar livremente o cargo que aparece abaixo da linha (uma quebra de linha no campo vira quebra de linha no documento);
 - escolher um cargo pronto na lista (Diretor(a) da Faculdade, Presidente do CAEFEL, Coordenador(a) do Curso, Coordenador(a) do Evento, Professor(a) Orientador(a), Ministrante etc.) e ajustá-lo depois, se precisar;
 - remover a assinatura do documento pelo botão ✕ e restaurá-la depois sem perder o nome.
 
 Os cargos padrão são Diretor(a) da Faculdade, Vice-diretor(a) da Faculdade e Presidente do CAEFEL.
+
+#### Assinatura em imagem
+
+Ao enviar a imagem, o gerador remove automaticamente o fundo branco ou claro e corta as margens vazias. Assim, uma assinatura escaneada numa folha inteira fica do mesmo tamanho visual das demais. O nome digitado continua aparecendo abaixo da linha; se preferir só a imagem e o cargo, deixe o nome em branco.
+
+Para um resultado melhor, use uma imagem com traço escuro, de preferência com fundo transparente ou branco liso. Fundos com sombra ou papel amarelado podem deixar manchas.
+
+**Segurança:** as imagens ficam apenas na memória do navegador. Não são enviadas a nenhum servidor e são descartadas ao recarregar a página. Não adicione arquivos de assinatura a este repositório, porque ele é público e qualquer pessoa poderia copiá-los.
 
 ### Geração em lote
 
